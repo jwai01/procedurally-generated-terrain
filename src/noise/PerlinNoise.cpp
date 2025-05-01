@@ -83,3 +83,28 @@ float PerlinNoise::noise(float x, float y) const {
     // Call the 3D noise function with z=0
     return noise(x, y, 0.0f);
 }
+
+float PerlinNoise::fractalNoise(float x, float y, int octaves, float persistence, float lacunarity, float scale) const {
+    float total = 0.0f;
+    float frequency = 1.0f / scale;
+    float amplitude = 1.0f;
+    float maxValue = 0.0f;  // Used for normalizing the result
+    
+    // Add successive layers of noise
+    for (int i = 0; i < octaves; i++) {
+        // Add detailed features with increasing frequency and decreasing amplitude
+        total += noise(x * frequency, y * frequency) * amplitude;
+        
+        // Track the maximum possible amplitude sum for normalization
+        maxValue += amplitude;
+        
+        // Increase the frequency for the next octave
+        frequency *= lacunarity;
+        
+        // Decrease the amplitude for the next octave
+        amplitude *= persistence;
+    }
+    
+    // Normalize the result to a range of -1 to 1
+    return total / maxValue;
+}

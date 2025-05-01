@@ -51,7 +51,7 @@ const char* fragmentShaderSource = R"(
 
 Renderer::Renderer() 
     : window(nullptr), vao(0), vbo(0), ibo(0), shaderProgram(0),
-      camera(glm::vec3(0.0f, 3.0f, 5.0f)),
+      camera(glm::vec3(0.0f, 10.0f, 5.0f)), // x, z, y postion of camera inital
       lastFrame(0.0f),
       deltaTime(0.0f) {}
 
@@ -175,7 +175,7 @@ glm::vec3 Renderer::getTerrainColor(float height) const {
     const float waterLevel = 0.0f;
     const float sandLevel = 0.3f;
     const float grassLevel = 0.35f;
-    const float rockLevel = 0.5f;
+    const float rockLevel = 0.45f;
     const float snowLevel = 0.7f;
 
     // Map height to color
@@ -213,15 +213,19 @@ void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
     
+    // Terrain scale factors - increase these to make the terrain wider
+    float horizontalScale = 5.0f;  // Increase from 2.0f to make terrain wider
+    float verticalScale = 4.0f;    // Keep the same or adjust as needed
+    
     // Generate vertices
     for (int z = 0; z < mapHeight; z++) {
         for (int x = 0; x < mapWidth; x++) {
             float y = heightMap.getHeight(x, z);
             
-            // Position
-            vertices.push_back(static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f);  // x
-            vertices.push_back(y * 0.5f);  // y
-            vertices.push_back(static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f);  // z
+            // Position - use wider horizontal scale
+            vertices.push_back((static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale);  // x
+            vertices.push_back(y * verticalScale);  // y
+            vertices.push_back((static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale);  // z
             
             // Color based on terrain type
             glm::vec3 color = getTerrainColor(y);

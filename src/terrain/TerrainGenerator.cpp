@@ -54,8 +54,14 @@ float* TerrainGenerator::generateNoiseMap(
                 float sampleX = x / scale * frequency + octaveOffsets[i * 2];
                 float sampleY = y / scale * frequency + octaveOffsets[i * 2 + 1];
                 
-                float perlinValue = noise.noise(sampleX, sampleY) * 2.0f - 1.0f;
-                noiseHeight += perlinValue * amplitude;
+                int octaves = 10;          // Number of layers (adjust for more/less detail) More octaves add more detail but take longer to compute
+                float persistence = 0.9f; // (0 - 1)) Higher values (closer to 1) make details more prominent, Lower values make the terrain smoother with less detailed features
+                float lacunarity = 2.0f;  // How quickly frequency increases (typically 2) Higher values add more small details
+                float scale = 450.0f;     // Base terrain scale (higher = smoother) Smaller values create more jagged terrain with smaller features
+
+                // Replace the single noise call with fractal noise
+                float height = noise.fractalNoise(sampleX, sampleY, octaves, persistence, lacunarity, scale);
+                noiseHeight += height * amplitude;
                 
                 amplitude *= persistence;
                 frequency *= lacunarity;

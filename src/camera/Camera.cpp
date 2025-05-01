@@ -1,11 +1,11 @@
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-Camera::Camera(const glm::vec3& position) 
+Camera::Camera(const glm::vec3& position)  //change initial orientation of camera
     : position(position),
       worldUp(0.0f, 1.0f, 0.0f),
       yaw(-90.0f),
-      pitch(0.0f),
+      pitch(-45.0f),   
       movementSpeed(5.0f),
       rotationSpeed(50.0f)
 {

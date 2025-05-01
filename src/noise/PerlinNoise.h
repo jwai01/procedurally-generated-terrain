@@ -8,6 +8,8 @@ public:
     float noise(float x, float y) const;
     float noise(float x, float y, float z) const;
     
+    float fractalNoise(float x, float y, int octaves, float persistence, float lacunarity, float scale) const;
+    
 private:
     int p[512];
     
