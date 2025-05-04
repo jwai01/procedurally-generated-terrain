@@ -114,7 +114,7 @@ bool Renderer::shouldClose() {
 
 void Renderer::renderTerrain(const HeightMap& heightMap) {
     // Clear the screen
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.392f, 0.584f, 0.929f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Set up terrain mesh if needed
