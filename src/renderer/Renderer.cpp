@@ -53,7 +53,8 @@ Renderer::Renderer()
     : window(nullptr), vao(0), vbo(0), ibo(0), shaderProgram(0),
       camera(glm::vec3(0.0f, 10.0f, 5.0f)), // x, z, y postion of camera inital
       lastFrame(0.0f),
-      deltaTime(0.0f) {}
+      deltaTime(0.0f),
+      totalIndicesCount(0) {} // Initialize the new member variable
 
 Renderer::~Renderer() {
     cleanup();
@@ -175,7 +176,7 @@ glm::vec3 Renderer::getTerrainColor(float height) const {
     const float waterLevel = 0.0f;
     const float sandLevel = 0.3f;
     const float grassLevel = 0.35f;
-    const float rockLevel = 0.45f;
+    const float rockLevel = 0.4f;
     const float snowLevel = 0.7f;
 
     // Map height to color
@@ -203,6 +204,326 @@ glm::vec3 Renderer::getTerrainColor(float height) const {
         float t = std::min((height - snowLevel) * 2.0f, 1.0f);
         return glm::mix(glm::vec3(0.7f, 0.7f, 0.7f), glm::vec3(1.0f, 1.0f, 1.0f), t);
     }
+}
+
+// Add triangular trees to vertices and indices arrays at specified position
+void Renderer::addTreeAt(std::vector<float>& vertices, std::vector<unsigned int>& indices, 
+                        float x, float y, float z, float scale, int& vertexCount) {
+    // Tree colors - dark to light green
+    glm::vec3 darkGreen(0.0f, 0.4f, 0.0f);
+    glm::vec3 midGreen(0.1f, 0.5f, 0.1f);
+    glm::vec3 lightGreen(0.2f, 0.6f, 0.1f);
+    
+    float treeHeight = 0.8f * scale;
+    float baseWidth = 0.2f * scale;
+    
+    // Tree trunk (brown)
+    float trunkHeight = 0.2f * scale;
+    glm::vec3 brown(0.45f, 0.30f, 0.15f);
+    
+    // Add trunk vertices
+    // Base of trunk
+    vertices.push_back(x - 0.05f * scale);  // x
+    vertices.push_back(y);                  // y
+    vertices.push_back(z - 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x + 0.05f * scale);  // x
+    vertices.push_back(y);                  // y
+    vertices.push_back(z - 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x + 0.05f * scale);  // x
+    vertices.push_back(y);                  // y
+    vertices.push_back(z + 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x - 0.05f * scale);  // x
+    vertices.push_back(y);                  // y
+    vertices.push_back(z + 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    // Top of trunk
+    vertices.push_back(x - 0.05f * scale);  // x
+    vertices.push_back(y + trunkHeight);    // y
+    vertices.push_back(z - 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x + 0.05f * scale);  // x
+    vertices.push_back(y + trunkHeight);    // y
+    vertices.push_back(z - 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x + 0.05f * scale);  // x
+    vertices.push_back(y + trunkHeight);    // y
+    vertices.push_back(z + 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    vertices.push_back(x - 0.05f * scale);  // x
+    vertices.push_back(y + trunkHeight);    // y
+    vertices.push_back(z + 0.05f * scale);  // z
+    vertices.push_back(brown.r);            // r
+    vertices.push_back(brown.g);            // g
+    vertices.push_back(brown.b);            // b
+    
+    // Trunk indices
+    unsigned int trunkBase = vertexCount;
+    
+    // Front face
+    indices.push_back(trunkBase);
+    indices.push_back(trunkBase + 1);
+    indices.push_back(trunkBase + 5);
+    
+    indices.push_back(trunkBase);
+    indices.push_back(trunkBase + 5);
+    indices.push_back(trunkBase + 4);
+    
+    // Right face
+    indices.push_back(trunkBase + 1);
+    indices.push_back(trunkBase + 2);
+    indices.push_back(trunkBase + 6);
+    
+    indices.push_back(trunkBase + 1);
+    indices.push_back(trunkBase + 6);
+    indices.push_back(trunkBase + 5);
+    
+    // Back face
+    indices.push_back(trunkBase + 2);
+    indices.push_back(trunkBase + 3);
+    indices.push_back(trunkBase + 7);
+    
+    indices.push_back(trunkBase + 2);
+    indices.push_back(trunkBase + 7);
+    indices.push_back(trunkBase + 6);
+    
+    // Left face
+    indices.push_back(trunkBase + 3);
+    indices.push_back(trunkBase);
+    indices.push_back(trunkBase + 4);
+    
+    indices.push_back(trunkBase + 3);
+    indices.push_back(trunkBase + 4);
+    indices.push_back(trunkBase + 7);
+    
+    vertexCount += 8;
+    
+    // Tree foliage (green triangular pyramids stacked)
+    // First layer (bottom)
+    float baseY = y + trunkHeight;
+    
+    // Bottom pyramid apex
+    vertices.push_back(x);                  // x
+    vertices.push_back(baseY + treeHeight * 0.6f); // y
+    vertices.push_back(z);                  // z
+    vertices.push_back(darkGreen.r);        // r
+    vertices.push_back(darkGreen.g);        // g
+    vertices.push_back(darkGreen.b);        // b
+    
+    // Bottom pyramid base vertices
+    vertices.push_back(x - baseWidth);      // x
+    vertices.push_back(baseY);              // y
+    vertices.push_back(z - baseWidth);      // z
+    vertices.push_back(darkGreen.r);        // r
+    vertices.push_back(darkGreen.g);        // g
+    vertices.push_back(darkGreen.b);        // b
+    
+    vertices.push_back(x + baseWidth);      // x
+    vertices.push_back(baseY);              // y
+    vertices.push_back(z - baseWidth);      // z
+    vertices.push_back(darkGreen.r);        // r
+    vertices.push_back(darkGreen.g);        // g
+    vertices.push_back(darkGreen.b);        // b
+    
+    vertices.push_back(x + baseWidth);      // x
+    vertices.push_back(baseY);              // y
+    vertices.push_back(z + baseWidth);      // z
+    vertices.push_back(darkGreen.r);        // r
+    vertices.push_back(darkGreen.g);        // g
+    vertices.push_back(darkGreen.b);        // b
+    
+    vertices.push_back(x - baseWidth);      // x
+    vertices.push_back(baseY);              // y
+    vertices.push_back(z + baseWidth);      // z
+    vertices.push_back(darkGreen.r);        // r
+    vertices.push_back(darkGreen.g);        // g
+    vertices.push_back(darkGreen.b);        // b
+    
+    // Add lower pyramid triangles
+    unsigned int lowerPyramidBase = vertexCount;
+    unsigned int lowerPyramidApex = lowerPyramidBase;
+    unsigned int lowerPyramidBottomLeft = lowerPyramidBase + 1;
+    unsigned int lowerPyramidBottomRight = lowerPyramidBase + 2;
+    unsigned int lowerPyramidTopRight = lowerPyramidBase + 3;
+    unsigned int lowerPyramidTopLeft = lowerPyramidBase + 4;
+    
+    // Four faces of the pyramid
+    indices.push_back(lowerPyramidApex);
+    indices.push_back(lowerPyramidBottomLeft);
+    indices.push_back(lowerPyramidBottomRight);
+    
+    indices.push_back(lowerPyramidApex);
+    indices.push_back(lowerPyramidBottomRight);
+    indices.push_back(lowerPyramidTopRight);
+    
+    indices.push_back(lowerPyramidApex);
+    indices.push_back(lowerPyramidTopRight);
+    indices.push_back(lowerPyramidTopLeft);
+    
+    indices.push_back(lowerPyramidApex);
+    indices.push_back(lowerPyramidTopLeft);
+    indices.push_back(lowerPyramidBottomLeft);
+    
+    vertexCount += 5;
+    
+    // Second layer (middle)
+    float midY = baseY + treeHeight * 0.4f;
+    float midWidth = baseWidth * 0.7f;
+    
+    // Middle pyramid apex
+    vertices.push_back(x);                  // x
+    vertices.push_back(midY + treeHeight * 0.4f); // y
+    vertices.push_back(z);                  // z
+    vertices.push_back(midGreen.r);         // r
+    vertices.push_back(midGreen.g);         // g
+    vertices.push_back(midGreen.b);         // b
+    
+    // Middle pyramid base vertices
+    vertices.push_back(x - midWidth);       // x
+    vertices.push_back(midY);               // y
+    vertices.push_back(z - midWidth);       // z
+    vertices.push_back(midGreen.r);         // r
+    vertices.push_back(midGreen.g);         // g
+    vertices.push_back(midGreen.b);         // b
+    
+    vertices.push_back(x + midWidth);       // x
+    vertices.push_back(midY);               // y
+    vertices.push_back(z - midWidth);       // z
+    vertices.push_back(midGreen.r);         // r
+    vertices.push_back(midGreen.g);         // g
+    vertices.push_back(midGreen.b);         // b
+    
+    vertices.push_back(x + midWidth);       // x
+    vertices.push_back(midY);               // y
+    vertices.push_back(z + midWidth);       // z
+    vertices.push_back(midGreen.r);         // r
+    vertices.push_back(midGreen.g);         // g
+    vertices.push_back(midGreen.b);         // b
+    
+    vertices.push_back(x - midWidth);       // x
+    vertices.push_back(midY);               // y
+    vertices.push_back(z + midWidth);       // z
+    vertices.push_back(midGreen.r);         // r
+    vertices.push_back(midGreen.g);         // g
+    vertices.push_back(midGreen.b);         // b
+    
+    // Add middle pyramid triangles
+    unsigned int midPyramidBase = vertexCount;
+    unsigned int midPyramidApex = midPyramidBase;
+    unsigned int midPyramidBottomLeft = midPyramidBase + 1;
+    unsigned int midPyramidBottomRight = midPyramidBase + 2;
+    unsigned int midPyramidTopRight = midPyramidBase + 3;
+    unsigned int midPyramidTopLeft = midPyramidBase + 4;
+    
+    // Four faces of the pyramid
+    indices.push_back(midPyramidApex);
+    indices.push_back(midPyramidBottomLeft);
+    indices.push_back(midPyramidBottomRight);
+    
+    indices.push_back(midPyramidApex);
+    indices.push_back(midPyramidBottomRight);
+    indices.push_back(midPyramidTopRight);
+    
+    indices.push_back(midPyramidApex);
+    indices.push_back(midPyramidTopRight);
+    indices.push_back(midPyramidTopLeft);
+    
+    indices.push_back(midPyramidApex);
+    indices.push_back(midPyramidTopLeft);
+    indices.push_back(midPyramidBottomLeft);
+    
+    vertexCount += 5;
+    
+    // Top layer (pointed top)
+    float topY = midY + treeHeight * 0.3f;
+    float topWidth = midWidth * 0.5f;
+    
+    // Top pyramid apex
+    vertices.push_back(x);                  // x
+    vertices.push_back(topY + treeHeight * 0.3f); // y
+    vertices.push_back(z);                  // z
+    vertices.push_back(lightGreen.r);       // r
+    vertices.push_back(lightGreen.g);       // g
+    vertices.push_back(lightGreen.b);       // b
+    
+    // Top pyramid base vertices
+    vertices.push_back(x - topWidth);       // x
+    vertices.push_back(topY);               // y
+    vertices.push_back(z - topWidth);       // z
+    vertices.push_back(lightGreen.r);       // r
+    vertices.push_back(lightGreen.g);       // g
+    vertices.push_back(lightGreen.b);       // b
+    
+    vertices.push_back(x + topWidth);       // x
+    vertices.push_back(topY);               // y
+    vertices.push_back(z - topWidth);       // z
+    vertices.push_back(lightGreen.r);       // r
+    vertices.push_back(lightGreen.g);       // g
+    vertices.push_back(lightGreen.b);       // b
+    
+    vertices.push_back(x + topWidth);       // x
+    vertices.push_back(topY);               // y
+    vertices.push_back(z + topWidth);       // z
+    vertices.push_back(lightGreen.r);       // r
+    vertices.push_back(lightGreen.g);       // g
+    vertices.push_back(lightGreen.b);       // b
+    
+    vertices.push_back(x - topWidth);       // x
+    vertices.push_back(topY);               // y
+    vertices.push_back(z + topWidth);       // z
+    vertices.push_back(lightGreen.r);       // r
+    vertices.push_back(lightGreen.g);       // g
+    vertices.push_back(lightGreen.b);       // b
+    
+    // Add top pyramid triangles
+    unsigned int topPyramidBase = vertexCount;
+    unsigned int topPyramidApex = topPyramidBase;
+    unsigned int topPyramidBottomLeft = topPyramidBase + 1;
+    unsigned int topPyramidBottomRight = topPyramidBase + 2;
+    unsigned int topPyramidTopRight = topPyramidBase + 3;
+    unsigned int topPyramidTopLeft = topPyramidBase + 4;
+    
+    // Four faces of the pyramid
+    indices.push_back(topPyramidApex);
+    indices.push_back(topPyramidBottomLeft);
+    indices.push_back(topPyramidBottomRight);
+    
+    indices.push_back(topPyramidApex);
+    indices.push_back(topPyramidBottomRight);
+    indices.push_back(topPyramidTopRight);
+    
+    indices.push_back(topPyramidApex);
+    indices.push_back(topPyramidTopRight);
+    indices.push_back(topPyramidTopLeft);
+    
+    indices.push_back(topPyramidApex);
+    indices.push_back(topPyramidTopLeft);
+    indices.push_back(topPyramidBottomLeft);
+    
+    vertexCount += 5;
 }
 
 void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
@@ -254,6 +575,41 @@ void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
             indices.push_back(bottomRight);
         }
     }
+    
+    // Add trees on grassy areas
+    int vertexCount = mapWidth * mapHeight;  // Current count of vertices
+    
+    // Define tree distribution parameters
+    const float grassLevel = 0.35f;
+    const float rockLevel = 0.4f;
+    const float treeDensity = 0.9f;  // Controls how many trees to place (lower = more trees)
+    
+    // Use a simple random number generator
+    srand(42);  // Fixed seed for consistent results
+    
+    for (int z = 2; z < mapHeight - 2; z += 2) {
+        for (int x = 2; x < mapWidth - 2; x += 2) {
+            float height = heightMap.getHeight(x, z);
+            
+            // Only place trees on grass/forest level terrain
+            if (height >= grassLevel && height < rockLevel) {
+                // Random chance to place a tree
+                if (rand() / static_cast<float>(RAND_MAX) < treeDensity) {
+                    // Calculate actual position
+                    float xPos = (static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale;
+                    float yPos = height * verticalScale; 
+                    float zPos = (static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale;
+                    
+                    // Add a tree with random scale between 0.1 and 0.2 (reduced from 0.3-0.5)
+                    float treeScale = 0.1f + (rand() / static_cast<float>(RAND_MAX)) * 0.1f;
+                    addTreeAt(vertices, indices, xPos, yPos, zPos, treeScale, vertexCount);
+                }
+            }
+        }
+    }
+    
+    // Store the total number of indices
+    totalIndicesCount = indices.size();
     
     // Create OpenGL buffers
     glGenVertexArrays(1, &vao);
@@ -325,9 +681,9 @@ void Renderer::renderMesh() {
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
     
-    // Draw mesh
+    // Draw mesh with all indices including trees
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, totalIndicesCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 

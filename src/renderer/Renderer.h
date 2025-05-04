@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>  // Add this include for std::vector
 #include "../terrain/HeightMap.h"
 #include "../camera/Camera.h"  // Add camera include
 
@@ -32,6 +33,7 @@ private:
     unsigned int vbo;
     unsigned int ibo;
     unsigned int shaderProgram;
+    unsigned int totalIndicesCount; // Add this to track total indices
     
     // Shader helper methods
     unsigned int compileShader(const char* source, unsigned int type);
@@ -49,4 +51,8 @@ private:
 
     
     glm::vec3 getTerrainColor(float height) const;
+    
+    // Tree generation
+    void addTreeAt(std::vector<float>& vertices, std::vector<unsigned int>& indices, 
+                 float x, float y, float z, float scale, int& vertexCount);
 };
