@@ -52,6 +52,9 @@ private:
     
     glm::vec3 getTerrainColor(float height) const;
     
+    // Height processing
+    float flattenWaterAreas(float height) const;
+    
     // Tree generation
     void addTreeAt(std::vector<float>& vertices, std::vector<unsigned int>& indices, 
                  float x, float y, float z, float scale, int& vertexCount);

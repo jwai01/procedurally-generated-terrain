@@ -170,10 +170,32 @@ void Renderer::cleanup() {
     glfwTerminate();
 }
 
+// Helper function to flatten water areas
+float Renderer::flattenWaterAreas(float height) const {
+    // Define a higher water level to make more terrain underwater
+    const float waterLevel = 0.3f;  // Changed from 0.0f to make more terrain underwater
+    const float transitionZone = 0.2f;
+    const float waterDepthOffset = 0.03f;  // Smaller offset for a more subtle effect
+    
+    if (height < waterLevel) {
+        // All underwater terrain gets flattened to a constant level
+        return waterLevel - waterDepthOffset;
+    } 
+    else if (height < waterLevel + transitionZone) {
+        // Transition zone - gradually blend from flat to original height
+        float t = (height - waterLevel) / transitionZone;
+        float smoothT = t * t * (3.0f - 2.0f * t); // Smooth interpolation
+        return (waterLevel - waterDepthOffset) * (1.0f - smoothT) + height * smoothT;
+    }
+    
+    // Above water transition zone - leave unchanged
+    return height;
+}
+
 // Get terrain color based on height
 glm::vec3 Renderer::getTerrainColor(float height) const {
-    // Define terrain thresholds
-    const float waterLevel = 0.0f;
+    // Define terrain thresholds - updated to match new water level
+    const float waterLevel = 0.1f;  // Must match the water level in flattenWaterAreas
     const float sandLevel = 0.3f;
     const float grassLevel = 0.35f;
     const float rockLevel = 0.4f;
@@ -541,15 +563,16 @@ void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
     // Generate vertices
     for (int z = 0; z < mapHeight; z++) {
         for (int x = 0; x < mapWidth; x++) {
-            float y = heightMap.getHeight(x, z);
+            float originalHeight = heightMap.getHeight(x, z);
+            float flattenedHeight = flattenWaterAreas(originalHeight); // Apply flattening
             
             // Position - use wider horizontal scale
             vertices.push_back((static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale);  // x
-            vertices.push_back(y * verticalScale);  // y
+            vertices.push_back(flattenedHeight * verticalScale);  // y - use flattened height
             vertices.push_back((static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale);  // z
             
-            // Color based on terrain type
-            glm::vec3 color = getTerrainColor(y);
+            // Color based on terrain type - use original height for color to preserve appearance
+            glm::vec3 color = getTerrainColor(originalHeight);
             vertices.push_back(color.r);  // r
             vertices.push_back(color.g);  // g
             vertices.push_back(color.b);  // b
