@@ -219,9 +219,28 @@ glm::vec3 Renderer::getTerrainColor(float height) const {
         float t = (height - grassLevel) / (rockLevel - grassLevel);
         return glm::mix(glm::vec3(0.1f, 0.6f, 0.1f), glm::vec3(0.1f, 0.4f, 0.1f), t);
     } else if (height < snowLevel) {
-        // Rock/mountain - gray/brown
+        // Rock/mountain - gray/brown with directional lighting
         float t = (height - rockLevel) / (snowLevel - rockLevel);
-        return glm::mix(glm::vec3(0.5f, 0.4f, 0.3f), glm::vec3(0.5f, 0.5f, 0.5f), t);
+        
+        // Base mountain color 
+        //glm::vec3 baseColor = glm::mix(glm::vec3(0.35f, 0.28f, 0.21f), glm::vec3(0.35f, 0.35f, 0.35f), t); //darker
+        glm::vec3 baseColor = glm::mix(glm::vec3(0.5f, 0.4f, 0.3f), glm::vec3(0.5f, 0.5f, 0.5f), t); //lighter
+        
+        // Apply directional lighting based on height
+        // This creates a simple shading effect where higher parts appear brighter
+        float lightIntensity = 0.6f + 0.4f * ((height - rockLevel) / (snowLevel - rockLevel));
+        
+        // Add variation based on position (creates ridge-like lighting)
+        // This simulates light coming from one direction
+        float xVariation = sin(height * 20.0f) * 0.15f;
+        float zVariation = cos(height * 15.0f) * 0.15f;
+        lightIntensity += xVariation + zVariation;
+        
+        // Clamp light intensity to reasonable range
+        lightIntensity = glm::clamp(lightIntensity, 0.5f, 1.0f);
+        
+        // Apply lighting to base color
+        return baseColor * lightIntensity;
     } else {
         // Snow - white
         float t = std::min((height - snowLevel) * 2.0f, 1.0f);
