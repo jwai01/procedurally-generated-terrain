@@ -233,9 +233,9 @@ glm::vec3 Renderer::getTerrainColor(float height) const {
 void Renderer::addTreeAt(std::vector<float>& vertices, std::vector<unsigned int>& indices, 
                         float x, float y, float z, float scale, int& vertexCount) {
     // Tree colors - dark to light green
-    glm::vec3 darkGreen(0.0f, 0.4f, 0.0f);
-    glm::vec3 midGreen(0.1f, 0.5f, 0.1f);
-    glm::vec3 lightGreen(0.2f, 0.6f, 0.1f);
+    glm::vec3 darkGreen(0.0f, 0.25f, 0.0f);   // Darker
+    glm::vec3 midGreen(0.0f, 0.3f, 0.0f);  // Darker
+    glm::vec3 lightGreen(0.0f, 0.35f, 0.0f); // Darker
     
     float treeHeight = 0.8f * scale;
     float baseWidth = 0.2f * scale;
