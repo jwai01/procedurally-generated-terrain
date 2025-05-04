@@ -54,7 +54,8 @@ Renderer::Renderer()
       camera(glm::vec3(0.0f, 10.0f, 5.0f)), // x, z, y postion of camera inital
       lastFrame(0.0f),
       deltaTime(0.0f),
-      totalIndicesCount(0) {} // Initialize the new member variable
+      totalIndicesCount(0),
+      triangleStepSize(1) {} // Initialize with a reasonable default of 1
 
 Renderer::~Renderer() {
     cleanup();
@@ -551,89 +552,106 @@ void Renderer::addTreeAt(std::vector<float>& vertices, std::vector<unsigned int>
 void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
     int mapWidth = heightMap.getWidth();
     int mapHeight = heightMap.getHeight();
-    
-    // Create mesh data
+
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
-    
-    // Terrain scale factors - increase these to make the terrain wider
-    float horizontalScale = 5.0f;  // Increase from 2.0f to make terrain wider
-    float verticalScale = 4.0f;    // Keep the same or adjust as needed
-    
-    // Generate vertices
-    for (int z = 0; z < mapHeight; z++) {
-        for (int x = 0; x < mapWidth; x++) {
-            float originalHeight = heightMap.getHeight(x, z);
-            float flattenedHeight = flattenWaterAreas(originalHeight); // Apply flattening
+
+    float horizontalScale = 5.0f;
+    float verticalScale = 4.0f;
+
+    int step = triangleStepSize;
+    if (step < 1) step = 1;
+
+    int vCols = (mapWidth + step - 1) / step;
+    int vRows = (mapHeight + step - 1) / step;
+
+    // Flat-shaded: each triangle gets its own vertices (no sharing)
+    for (int z = 0; z < vRows - 1; ++z) {
+        for (int x = 0; x < vCols - 1; ++x) {
+            int x0 = x * step;
+            int x1 = std::min((x + 1) * step, mapWidth - 1);
+            int z0 = z * step;
+            int z1 = std::min((z + 1) * step, mapHeight - 1);
+
+            float h00 = heightMap.getHeight(x0, z0);
+            float h10 = heightMap.getHeight(x1, z0);
+            float h01 = heightMap.getHeight(x0, z1);
+            float h11 = heightMap.getHeight(x1, z1);
+
+            float x00 = (static_cast<float>(x0) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale;
+            float z00 = (static_cast<float>(z0) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale;
+            float y00 = flattenWaterAreas(h00) * verticalScale;
+
+            float x10 = (static_cast<float>(x1) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale;
+            float z10 = z00;
+            float y10 = flattenWaterAreas(h10) * verticalScale;
+
+            float x01 = x00;
+            float z01 = (static_cast<float>(z1) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale;
+            float y01 = flattenWaterAreas(h01) * verticalScale;
+
+            float x11 = x10;
+            float z11 = z01;
+            float y11 = flattenWaterAreas(h11) * verticalScale;
+
+            // Flat shading: Calculate proper surface normals for each triangle
+            // and use consistent coloring for better flat shading appearance
             
-            // Position - use wider horizontal scale
-            vertices.push_back((static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale);  // x
-            vertices.push_back(flattenedHeight * verticalScale);  // y - use flattened height
-            vertices.push_back((static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale);  // z
+            // First triangle (topLeft, bottomLeft, topRight) - use average height for color
+            float avgHeight1 = (h00 + h01 + h10) / 3.0f;
+            glm::vec3 triColor1 = getTerrainColor(avgHeight1);
             
-            // Color based on terrain type - use original height for color to preserve appearance
-            glm::vec3 color = getTerrainColor(originalHeight);
-            vertices.push_back(color.r);  // r
-            vertices.push_back(color.g);  // g
-            vertices.push_back(color.b);  // b
+            unsigned int idx = vertices.size() / 6;
+            vertices.insert(vertices.end(), {
+                x00, y00, z00, triColor1.r, triColor1.g, triColor1.b,
+                x01, y01, z01, triColor1.r, triColor1.g, triColor1.b,
+                x10, y10, z10, triColor1.r, triColor1.g, triColor1.b
+            });
+            indices.push_back(idx);
+            indices.push_back(idx + 1);
+            indices.push_back(idx + 2);
+
+            // Second triangle (topRight, bottomLeft, bottomRight) - use average height for color
+            float avgHeight2 = (h10 + h01 + h11) / 3.0f;
+            glm::vec3 triColor2 = getTerrainColor(avgHeight2);
+            
+            idx = vertices.size() / 6;
+            vertices.insert(vertices.end(), {
+                x10, y10, z10, triColor2.r, triColor2.g, triColor2.b,
+                x01, y01, z01, triColor2.r, triColor2.g, triColor2.b,
+                x11, y11, z11, triColor2.r, triColor2.g, triColor2.b
+            });
+            indices.push_back(idx);
+            indices.push_back(idx + 1);
+            indices.push_back(idx + 2);
         }
     }
-    
-    // Generate indices for triangle strips
-    for (int z = 0; z < mapHeight - 1; z++) {
-        for (int x = 0; x < mapWidth - 1; x++) {
-            int topLeft = z * mapWidth + x;
-            int topRight = topLeft + 1;
-            int bottomLeft = (z + 1) * mapWidth + x;
-            int bottomRight = bottomLeft + 1;
-            
-            // First triangle
-            indices.push_back(topLeft);
-            indices.push_back(bottomLeft);
-            indices.push_back(topRight);
-            
-            // Second triangle
-            indices.push_back(topRight);
-            indices.push_back(bottomLeft);
-            indices.push_back(bottomRight);
-        }
-    }
-    
-    // Add trees on grassy areas
-    int vertexCount = mapWidth * mapHeight;  // Current count of vertices
-    
-    // Define tree distribution parameters
+
+    // Add trees on grassy areas (restore this block after mesh generation)
+    int vertexCount = vertices.size() / 6;  // Current count of vertices (since each vertex is 6 floats)
     const float grassLevel = 0.35f;
     const float rockLevel = 0.4f;
-    const float treeDensity = 0.9f;  // Controls how many trees to place (lower = more trees)
-    
-    // Use a simple random number generator
-    srand(42);  // Fixed seed for consistent results
-    
+    const float treeDensity = 0.9f;
+    srand(42);
+
+    // Use the original map grid for tree placement, not the reduced mesh grid
     for (int z = 2; z < mapHeight - 2; z += 2) {
         for (int x = 2; x < mapWidth - 2; x += 2) {
             float height = heightMap.getHeight(x, z);
-            
-            // Only place trees on grass/forest level terrain
             if (height >= grassLevel && height < rockLevel) {
-                // Random chance to place a tree
                 if (rand() / static_cast<float>(RAND_MAX) < treeDensity) {
-                    // Calculate actual position
                     float xPos = (static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale;
-                    float yPos = flattenWaterAreas(height) * verticalScale; // Use flattened height
+                    float yPos = flattenWaterAreas(height) * verticalScale;
                     float zPos = (static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale;
-                    
-                    // Add a tree with random scale between 0.1 and 0.2 (reduced from 0.3-0.5)
                     float treeScale = 0.1f + (rand() / static_cast<float>(RAND_MAX)) * 0.1f;
                     addTreeAt(vertices, indices, xPos, yPos, zPos, treeScale, vertexCount);
                 }
             }
         }
     }
-    
-    // Store the total number of indices
+
     totalIndicesCount = indices.size();
-    
+
     // Create OpenGL buffers
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);

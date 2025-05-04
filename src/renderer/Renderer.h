@@ -20,6 +20,9 @@ public:
     void handleInput(float deltaTime);  
     void cleanup();
     
+    // Add a setter method for triangle step size
+    void setTriangleStepSize(int stepSize) { triangleStepSize = stepSize > 0 ? stepSize : 1; }
+    
 private:
     GLFWwindow* window;
     int width;
@@ -49,6 +52,7 @@ private:
     // Input handling
     void processInput();
 
+    int triangleStepSize; // Controls terrain mesh resolution
     
     glm::vec3 getTerrainColor(float height) const;
     
