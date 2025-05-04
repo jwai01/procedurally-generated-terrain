@@ -620,7 +620,7 @@ void Renderer::setupTerrainMesh(const HeightMap& heightMap) {
                 if (rand() / static_cast<float>(RAND_MAX) < treeDensity) {
                     // Calculate actual position
                     float xPos = (static_cast<float>(x) / (mapWidth - 1) * 2.0f - 1.0f) * horizontalScale;
-                    float yPos = height * verticalScale; 
+                    float yPos = flattenWaterAreas(height) * verticalScale; // Use flattened height
                     float zPos = (static_cast<float>(z) / (mapHeight - 1) * 2.0f - 1.0f) * horizontalScale;
                     
                     // Add a tree with random scale between 0.1 and 0.2 (reduced from 0.3-0.5)
